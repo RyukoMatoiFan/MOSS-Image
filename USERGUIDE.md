@@ -4,10 +4,10 @@
 
 As a base model, MOSS-Image-Base has not undergone any post-training or distillation of inference parameters such as CFG. Our goal is to preserve the training information in full and make it easier for the community to train LoRAs. This also means that users need suitable inference settings to get the best results. Here are our recommendations:
 
-* **Resolution**: We recommend outputs with **1M, 1.5M, or 2M** total pixels. The model can also extrapolate to arbitrary resolutions from 0.25M (`512×512`) to 4M (2K).
-* **Aspect Ratio**: We support arbitrary aspect ratios. Gradio’s resolution and aspect-ratio controls calculate dimensions aligned to multiples of 16. In the Python API, or when entering dimensions manually, use positive multiples of 16; invalid dimensions raise an error.
-* **Inference Steps**: Best results are achieved with **≥ 50** steps.
-* **CFG**: Default **3.0** (recommended range: 3.0–6.0). A value of 3.0 is generally sufficient for long prompts; for short prompts, we recommend increasing it as needed.
+* **Resolution**: We recommend outputs with **1M, 1.5M, or 2M** total pixels. The model can also extrapolate to arbitrary resolutions from 0.25M (`512Г—512`) to 4M (2K).
+* **Aspect Ratio**: We support arbitrary aspect ratios. GradioвЂ™s resolution and aspect-ratio controls calculate dimensions aligned to multiples of 16. In the Python API, or when entering dimensions manually, use positive multiples of 16; invalid dimensions raise an error.
+* **Inference Steps**: Best results are achieved with **в‰Ґ 50** steps.
+* **CFG**: Default **3.0** (recommended range: 3.0вЂ“6.0). A value of 3.0 is generally sufficient for long prompts; for short prompts, we recommend increasing it as needed.
 * **Shift**: Default **5.0**.
 * **Sampler**: **Euler** is the recommended default.
 * **SLG (Skip Layer Guidance)**: We have implemented two variants:
@@ -35,7 +35,7 @@ Here are some recommended example prompts:
 
 ```text
 prompt:
-一个穿着"MOSI"标志的T恤的中国美女正拿着黑色的马克笔面向镜头微笑。她身后的玻璃板上手写体写着 "一、MOSS-Image的技术路线：5B 的单流 DiT 模型，基于 Muon 训练。二、MOSS-Image的模型特色：1、复杂文字渲染。支持中英渲染、自动布局； 2、使用 Layout 进行精准图像控制，支持文字编辑和物体增减等自由编辑。三、MOSS-Image的后续发展：探索 R2I 参考生图、助力生成式AI发展。"
+дёЂдёЄз©їзќЂ"MOSI"ж ‡еї—зљ„TжЃ¤зљ„дё­е›ЅзѕЋеҐіж­Јж‹їзќЂй»‘и‰Ізљ„й©¬е…‹з¬”йќўеђ‘й•ње¤ґеѕ®з¬‘гЂ‚еҐ№иє«еђЋзљ„зЋ»з’ѓжќїдёЉж‰‹е†™дЅ“е†™зќЂ "дёЂгЂЃMOSS-Imageзљ„жЉЂжњЇи·Їзєїпјљ5B зљ„еЌ•жµЃ DiT жЁЎећ‹пјЊеџєдєЋ Muon и®­з»ѓгЂ‚дєЊгЂЃMOSS-Imageзљ„жЁЎећ‹з‰№и‰Іпјљ1гЂЃе¤Ќжќ‚ж–‡е­—жёІжџ“гЂ‚ж”ЇжЊЃдё­и‹±жёІжџ“гЂЃи‡ЄеЉЁеёѓе±Ђпј› 2гЂЃдЅїз”Ё Layout иї›иЎЊзІѕе‡†е›ѕеѓЏжЋ§е€¶пјЊж”ЇжЊЃж–‡е­—зј–иѕ‘е’Њз‰©дЅ“еўће‡Џз­‰и‡Єз”±зј–иѕ‘гЂ‚дё‰гЂЃMOSS-Imageзљ„еђЋз»­еЏ‘е±•пјљжЋўзґў R2I еЏ‚иЂѓз”џе›ѕгЂЃеЉ©еЉ›з”џж€ђејЏAIеЏ‘е±•гЂ‚"
 
 negative prompt:
 worst quality, bad anatomy
@@ -44,9 +44,9 @@ worst quality, bad anatomy
 ```text
 prompt:
 A wide view of a refrigerator beside a kitchen counter with a fruit bowl. A small sticky note on the refrigerator door is handwritten in Chinese:
-“记得买牛奶和鸡蛋！
-牛奶两盒，鸡蛋一打。
-顺便带一袋面包。”
+вЂњи®°еѕ—д№°з‰›еҐ¶е’ЊйёЎи›‹пјЃ
+з‰›еҐ¶дё¤з›’пјЊйёЎи›‹дёЂж‰“гЂ‚
+йЎєдѕїеё¦дёЂиў‹йќўеЊ…гЂ‚вЂќ
 
 negative prompt:
 
@@ -86,9 +86,9 @@ The fields are defined as follows:
 - `summary.caption`: A description of the overall scene and style.
 - `items`: Each element's category (`label`), description (`caption`), and bounding box (`bbox`). Use `text` to specify the content when rendering text.
 - `bbox_format: "yxyx"`: Coordinates are ordered as `[y_min, x_min, y_max, x_max]`.
-- `bbox_coord_space: "abs_centralized"`: Absolute pixel coordinates with the canvas center as the origin (x increases to the right and y increases downward). For example, a 1024×1024 canvas ranges from -512 to +512 on both axes. For a canvas of width W and height H, subtract W/2 and H/2 from conventional top-left-origin x and y coordinates, respectively, to convert to this coordinate system.
+- `bbox_coord_space: "abs_centralized"`: Absolute pixel coordinates with the canvas center as the origin (x increases to the right and y increases downward). For example, a 1024Г—1024 canvas ranges from -512 to +512 on both axes. For a canvas of width W and height H, subtract W/2 and H/2 from conventional top-left-origin x and y coordinates, respectively, to convert to this coordinate system.
 
-> Some recent work uses relative coordinates for layout control. We use absolute pixel coordinates, which we believe are better suited to layout control across different resolutions and aspect ratios.
+> Layout control uses absolute pixel coordinates across resolutions and aspect ratios.
 
 The model supports combining natural language and structured input.
 
@@ -96,15 +96,15 @@ The model supports combining natural language and structured input.
 
 The MOSS-Image series natively supports layouts, enabling many interesting applications and expanding the models' capabilities. This also makes the models more difficult to use.
 
-To address this, we use two approaches to layout enhancement. The training-free approach uses a carefully tuned skill with an LLM to provide basic layout planning. The other approach fine-tunes an open-source LLM directly as a layout enhancer. Stay tuned.
+Layout enhancement can use an LLM with a layout-planning skill or a fine-tuned open-source LLM as a layout enhancer.
 
 ## Post-Training
 
 ### LoRA Training Recommendations
 
-We have found that simple SFT can enable features such as GIF generation and reference-based generation in MOSS-Image-Base. Stay tuned.
+Supervised fine-tuning can enable GIF generation and reference-based generation in MOSS-Image-Base.
 
-If you post-train MOSS-Image-Base yourself, keep the text encoder frozen. Do not fine-tune it.
+The trainer in this repository is that post-training path: LoRA or full fine-tuning, and reference-image edit training on the reserved RoPE reference axis. Keep the text encoder frozen. Commands are in the Training section of the README.
 
 ### Image Captioning
 
@@ -135,7 +135,7 @@ Rules:
 - caption.short: summarize the main subject, action, or relationship in one sentence.
 - Do not describe watermarks in any caption field. Record them only in watermark.
 - watermark:
-    - Use normalized 0–1000 [y_min, x_min, y_max, x_max] coordinates relative to the full image.
+    - Use normalized 0вЂ“1000 [y_min, x_min, y_max, x_max] coordinates relative to the full image.
     - Set label to the visible watermark text, or a short description if unreadable.
     - Use [] if there are no watermarks.
 - borders:
@@ -151,7 +151,7 @@ Here is the original caption reference:
 
 #### Caption Model
 
-We have tried several VLMs for captioning images for MOSS-Image-Base. We recommend Gemma 4, Qwen 3.5 27B, or Qwen 3.5 35B-A3B. We generally use the following request format:
+Recommended captioning models for MOSS-Image-Base include Gemma 4, Qwen 3.5 27B, and Qwen 3.5 35B-A3B. Use the following request format:
 
 ```python
 body = {
@@ -183,5 +183,3 @@ We recommend enabling thinking mode for more accurate captions.
 3. Better understanding helps improve generation.
 
 ### Few-Step Distillation
-
-We are actively working on few-step distillation methods such as DMD. Stay tuned.

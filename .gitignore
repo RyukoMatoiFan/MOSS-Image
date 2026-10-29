@@ -36,3 +36,6 @@ github_ssh_public_key.txt
 
 # ComfyUI is installed locally by comfyui/local/setup.sh
 /third_party/ComfyUI/
+
+# Private project handoff notes
+/HANDOFF.md

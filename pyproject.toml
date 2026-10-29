@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "moss-image"
 version = "0.1.0"
-description = "Standalone MOSS-Image text-to-image inference with Diffusers"
+description = "MOSS-Image inference and DiT training"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -17,11 +17,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.11"]
 ui = ["gradio>=6.30"]
+train = ["PyYAML>=6"]
 
 [tool.setuptools]
 license-files = ["LICENSE", "LICENSES/*.txt"]
 py-modules = ["inference_runtime", "mps_runtime", "gradio_app", "gradio_presets"]
-packages = ["assets"]
+packages = ["assets", "training"]
 include-package-data = false
 
 [tool.setuptools.package-data]
@@ -35,5 +36,6 @@ target-version = "py310"
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "training/tests"]
 pythonpath = ["."]
+markers = ["gpu: requires an explicitly reserved CUDA device"]

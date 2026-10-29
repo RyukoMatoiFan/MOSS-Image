@@ -45,7 +45,6 @@
 
 - **[2026-10-19]** 📄 [MOSS-Image 技术报告](https://arxiv.org/abs/2610.23374)已在 arXiv 公开。如果我们的工作对你有帮助，欢迎在 [Hugging Face Papers 上为我们点赞（upvote）](https://huggingface.co/papers/2610.23374)，感谢支持！🤗
 
-- **[2026-10-18]** 🛠️ [KohakuMossTrainer](https://github.com/KohakuBlueleaf/KohakuMossTrainer) 已发布，支持 **MOSS-Image-Base** 和 **MOSS-Image-SFT** 的全参数微调与 LyCORIS 训练（包括 LoRA）。它提供丰富的优化器、混合精度训练（BF16/FP16/FP8/MXFP8/INT8）、多 GPU 训练（DDP/FSDP/流水线并行）、优化算子及 CPU 卸载，适配器训练最低可使用 **6GB 显存**。支持 Windows、Linux、NVIDIA GPU（SM70–SM120）和 Intel Arc GPU。详见 [GitHub 仓库](https://github.com/KohakuBlueleaf/KohakuMossTrainer)。
 
 - **[2026-10-16]** 🚀 [SGLang](https://docs.sglang.io/cookbook/diffusion/OpenMOSS/MOSS-Image)、[vLLM-Omni](https://recipes.vllm.ai/OpenMOSS-Team/MOSS-Image-Base) 和 [ComfyUI](https://huggingface.co/Comfy-Org/MOSS-Image) 均已提供 MOSS-Image 的发布首日（Day-0）支持。
 
@@ -121,6 +120,7 @@ MOSS-Image 已获 [ComfyUI 官方原生支持](https://github.com/Comfy-Org/Comf
   - [采样参数](#sampling-settings)
   - [显存与性能](#memory-and-performance)
 - [Layout 布局生成](#layout-generation)
+- [训练](#training)
 - [Showcase](#showcase)
 - [引用](#citation)
 - [许可与致谢](#license)
@@ -284,6 +284,23 @@ MOSS-Image 使用布局控制生成的结果。
 并设置对应的宽高；使用 Python API 时，将 `json.dumps(layout, ensure_ascii=False)`
 作为提示词字符串传入。
 
+<a id="training"></a>
+
+## 训练
+
+只训练 DiT。Qwen3.5-9B 文本编码器和 FLUX.2 VAE 保持冻结，先写入缓存。编辑训练把参考图作为干净 token，RoPE 参考轴 `r` 从 1 起，损失只算在加噪的目标图上（`r = 0`）。
+
+```bash
+pip install -e '.[train]'
+python -m training.precache --bundle /path/to/MOSS-Image-Base --images /path/to/captions --out cache/t2i
+python -m training.train --config configs/t2i_lora.yaml
+python -m training.train --config configs/edit_lora.yaml
+```
+
+在 YAML 里把 `model` 设成本地权重目录。编辑清单每行是
+`{"target": "after.png", "refs": ["before.png"], "instruction": "make it autumn"}`。
+完整命令、全量微调和采样见英文 README 的 Training 一节。
+
 <a id="showcase"></a>
 
 ## 🖼️ Showcase
@@ -314,7 +331,7 @@ MOSS-Image 使用布局控制生成的结果。
 
 ## 📄 许可与致谢
 
-推理代码采用 [Apache License 2.0](LICENSE)。
+推理与训练代码采用 [Apache License 2.0](LICENSE)。
 
 感谢 Diffusers、Qwen 和 FLUX 团队。
 

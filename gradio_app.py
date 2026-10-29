@@ -51,7 +51,7 @@ def is_model_bundle(path):
     try:
         if not (path / "pipeline_moss_image.py").is_file():
             return False
-        index = json.loads((path / "model_index.json").read_text())
+        index = json.loads((path / "model_index.json").read_text(encoding="utf-8"))
         if not all(name in index and (path / name).is_dir() for name in COMPONENTS):
             return False
         for name in ("transformer", "text_encoder", "vae"):
@@ -61,7 +61,7 @@ def is_model_bundle(path):
             indices = list(component.glob("*.safetensors.index.json"))
             if indices:
                 for file in indices:
-                    shards = json.loads(file.read_text())["weight_map"].values()
+                    shards = json.loads(file.read_text(encoding="utf-8"))["weight_map"].values()
                     if not shards or not all((component / shard).is_file() for shard in shards):
                         return False
             elif not any(component.glob("*.safetensors")):
@@ -359,7 +359,7 @@ class ModelRunner:
                 "images": [Path(p).name for p in paths],
             }
             metadata = folder / "parameters.json"
-            metadata.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
+            metadata.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             report(1, desc="Complete")
             return (
                 paths,
@@ -403,7 +403,7 @@ def build_app(
         images = []
         stamps = []
         for path in paths:
-            record = json.loads(path.read_text())
+            record = json.loads(path.read_text(encoding="utf-8"))
             image = (path.parent / record.get("image", "image.webp")).resolve()
             if not image.is_relative_to(EXAMPLES.resolve()):
                 raise ValueError("Example images must be inside the assets directory.")
@@ -673,7 +673,7 @@ def build_app(
 
         def load_example(path):
             path = Path(path)
-            record = json.loads(path.read_text())
+            record = json.loads(path.read_text(encoding="utf-8"))
             # Examples supply image settings; keep the user's runtime configuration.
             parameters = {
                 key: value

@@ -22,6 +22,5 @@
     "compile_transformer": false
   },
   "sampler": "Euler",
-  "recovered_from": "Running Space gallery and example selection",
   "image": "image.png"
 }

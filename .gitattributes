@@ -1,0 +1,5 @@
+/HANDOFF.md export-ignore
+/local export-ignore
+/.venv* export-ignore
+local/** export-ignore
+.venv*/** export-ignore

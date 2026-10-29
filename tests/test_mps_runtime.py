@@ -169,13 +169,15 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(load.call_count, 2)
 
     def test_mps_provenance_hashes_bundle_pipeline_and_wrapper(self):
+        self.config = self.app.GenerationConfig(prompt="\u043a\u043e\u0444\u0435 \u5496\u5561")
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "pipeline_moss_image.py"
-            source.write_text("# bundle pipeline\n")
+            source.write_bytes(b"# bundle pipeline\n")
             with patch.object(self.app, "load_pipeline", return_value=fake_pipe(pipeline_file=source)), \
                  patch.object(self.app, "generate_with_progress", return_value=fake_output()):
                 _, metadata, _ = self.runner.generate(MODEL, self.config)
-        record = json.loads(Path(metadata).read_text())
+        record = json.loads(Path(metadata).read_text(encoding="utf-8"))
+        self.assertEqual(record["parameters"]["prompt"], self.config.prompt)
         self.assertEqual(record["pipeline_sha256"], hashlib.sha256(b"# bundle pipeline\n").hexdigest())
         self.assertEqual(
             record["mps_runtime_sha256"], hashlib.sha256(Path(runtime.__file__).read_bytes()).hexdigest()

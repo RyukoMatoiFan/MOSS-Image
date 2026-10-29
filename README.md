@@ -44,7 +44,6 @@
 
 - **[2026-10-19]** 📄 The [MOSS-Image Technical Report](https://arxiv.org/abs/2610.23374) is now available on arXiv. If you find our work useful, please support us with an [upvote on Hugging Face Papers](https://huggingface.co/papers/2610.23374)! 🤗
 
-- **[2026-10-18]** 🛠️ [KohakuMossTrainer](https://github.com/KohakuBlueleaf/KohakuMossTrainer) has been released, offering full fine-tuning and LyCORIS training (including LoRA) for **MOSS-Image-Base** and **MOSS-Image-SFT**. It features extensive optimizer support, mixed-precision training (BF16/FP16/FP8/MXFP8/INT8), multi-GPU training (DDP/FSDP/pipeline parallelism), optimized kernels, and CPU offloading, enabling adapter training with as little as **6GB VRAM**. It supports Windows, Linux, NVIDIA GPUs (SM70–SM120), and Intel Arc GPUs. See the [GitHub repository](https://github.com/KohakuBlueleaf/KohakuMossTrainer) for details.
 
 - **[2026-10-16]** 🚀 MOSS-Image has day-0 support in [SGLang](https://docs.sglang.io/cookbook/diffusion/OpenMOSS/MOSS-Image), [vLLM-Omni](https://recipes.vllm.ai/OpenMOSS-Team/MOSS-Image-Base), and [ComfyUI](https://huggingface.co/Comfy-Org/MOSS-Image).
 
@@ -124,6 +123,7 @@ into MOSS-Image's positive prompt; for Layout, use the same generation dimension
   - [Sampling settings](#sampling-settings)
   - [Memory and performance](#memory-and-performance)
 - [Layout-to-image generation](#layout-generation)
+- [Training](#training)
 - [Showcase](#showcase)
 - [Citation](#citation)
 - [License and acknowledgements](#license)
@@ -294,6 +294,86 @@ Keep the coordinates consistent with the requested output dimensions. In Gradio,
 paste the JSON into the prompt field and set the matching width and height. With
 the Python API, pass `json.dumps(layout, ensure_ascii=False)` as the prompt string.
 
+<a id="training"></a>
+
+## Training
+
+LoRA and full fine-tuning train the DiT only. The Qwen3.5-9B text encoder and the
+FLUX.2 VAE stay frozen: precache writes their outputs, and the training step never
+loads them. Edit examples are the same loop. A reference image is packed as clean
+tokens with RoPE reference index `1`, `2`, … and the loss stays on the noised
+target, which keeps `r = 0`.
+
+```bash
+pip install -e '.[train]'
+
+python -m training.precache --bundle /path/to/MOSS-Image-Base --images /path/to/captions --out cache/t2i
+python -m training.train --config configs/t2i_lora.yaml
+python -m training.train --config configs/t2i_full.yaml
+
+python -m training.precache --bundle /path/to/MOSS-Image-Base --manifest edits.jsonl --out cache/edit
+python -m training.train --config configs/edit_lora.yaml
+python -m training.train --config configs/edit_full.yaml
+```
+
+Set `model` in the YAML to the local bundle or a dense ComfyUI diffusion-model
+file. For ComfyUI component files, precache/sample also accept `--text-encoder`
+and `--vae`; `--bundle` supplies tokenizer assets and component configs.
+An edit manifest row is
+`{"target": "after.png", "refs": ["before.png"], "instruction": "make it autumn"}`.
+Paths are relative to the manifest. Text-to-image data is an image plus a `.txt`
+caption with the same file stem.
+
+`configs/t2i_lora.yaml` trains adapter weights on a frozen bf16 base. Training
+memory options and current verification limits are documented in
+[training validation](training/VALIDATION.md).
+Packed batches, selective checkpointing, activation/gradient offload, quantized
+CUDA kernels, fixed validation and optimizer controls are described in
+[training performance and controls](training/PERFORMANCE.md).
+For CPU block offloading, start with `configs/low_vram_lora.yaml` or
+`configs/low_vram_full.yaml`, set `model` and `cache_dir`, and read the training documentation's
+validation scope and host-memory considerations. Their learning rates still need
+dataset-specific tuning.
+
+For LoRA that fits on your GPU, set `blocks_to_swap: 0` to keep all weights
+resident. For asynchronous frozen-base streaming, set `blocks_to_swap: 42`
+and `block_swap_mode: async`. This uses pinned CPU masters, a dedicated CUDA
+copy stream and two GPU staging buffers; each block is one packed H2D copy.
+Adapters and optimizer state stay on CUDA. Streamed blocks always use gradient
+checkpointing. Full fine-tuning supports synchronous CPU masters, or
+`block_swap_mode: async_full` with `optimizer: adafactor_fused` for bidirectional
+streaming. The latter updates during backward and requires `grad_clip: 0`.
+
+Full fine-tuning defaults to fp32 parameters:
+weights, gradients and AdamW moments require separate storage in addition to
+activations, distributed across CPU/GPU when blocks are swapped.
+Adafactor reduces optimizer-state memory; the fused path also supports opt-in
+BF16 parameter storage. `optimizer: adamw8bit` needs bitsandbytes. The noise
+draw is the final pretraining interval from the technical report (logit-normal
+`μ = -1.09`, `s = 0.95`, cutoff 0.95, 1% uniform, `T = 1000`).
+
+```bash
+python -m training.sample --bundle /path/to/MOSS-Image-Base \
+  --lora runs/t2i-lora/step_001000/lora.safetensors \
+  --prompt "a fox in the snow" --out fox.png
+
+python -m training.sample --bundle /path/to/MOSS-Image-Base \
+  --transformer runs/edit-full/step_002000 \
+  --ref source.png --prompt "make it autumn" --out edited.png
+```
+
+LoRA files use ComfyUI keys (`diffusion_model.<layer>.lora_A.weight`). Sampling
+uses 50 steps, CFG 3, shift 5, and negative-branch skipping at block 22. Both
+guidance branches see the reference images. `python -m training.train --smoke`
+runs a tiny CPU check without weights.
+
+Sampling accepts `--blocks-to-swap 42` for the default architecture and optional
+`--block-swap-mode async` for frozen-weight CUDA streaming, plus
+`--base-quantization int8` or `int8_convrot`. The VAE runs separately from DiT
+denoising to reduce peak VRAM. Quantization changes outputs approximately.
+Current native ComfyUI supports MOSS LoRA loading, but does not implement this
+trainer's reference-image conditioning; use `training.sample --ref` for edits.
+
 <a id="showcase"></a>
 
 ## 🖼️ Showcases
@@ -324,7 +404,7 @@ If you use MOSS-Image in your research, please cite our technical report:
 
 ## 📄 License and acknowledgements
 
-The standalone pipeline code is provided under the [Apache License 2.0](LICENSE).
+The standalone pipeline and training code are provided under the [Apache License 2.0](LICENSE).
 
 We thank the Diffusers, Qwen and FLUX teams.
 

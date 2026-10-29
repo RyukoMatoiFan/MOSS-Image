@@ -88,7 +88,7 @@ MOSS-Image-Base 探索了文生图中的布局控制，目前支持通过以下 
 - `bbox_coord_space: "abs_centralized"`：以画布中心为原点的绝对像素坐标（x 向右、y
   向下递增）。例如 1024×1024 画布的范围是 -512 到 +512。对于宽 W、高 H 的画布，将常规左上角原点的 x、y 分别减去 W/2 和 H/2 即可转换。
 
-> 我们注意到，一些近期工作采用相对坐标进行布局控制。我们选择使用绝对像素坐标，认为这种表示更适合不同分辨率和长宽比下的布局控制。
+> 布局控制使用绝对像素坐标，适用于不同分辨率和长宽比。
 
 模型支持自然语言和结构化语言的混合输入。
 
@@ -96,15 +96,15 @@ MOSS-Image-Base 探索了文生图中的布局控制，目前支持通过以下 
 
 MOSS-Image 系列原生支持 layout, 这给我们的模型带来了很多有趣的功能, 提升了模型能力的上限, 同时也变相增加了用户使用的困难.
 
-为了解决这个问题, 我们暂时提供了两种 layout enhance 方法. Training free 的方法是使用精心微调的 skill, 使用 LLM 接入来提供简单的 layout 规划功能; 另外一种是直接微调一个开源的 LLM 作为 layout enhancer. 敬请期待.
+布局增强可以使用 LLM 配合布局规划 skill，也可以使用微调后的开源 LLM 作为 layout enhancer。
 
 ## 后训练
 
 ### LoRA
 
-我们发现通过简单 SFT, MOSS-Image-Base 能够实现诸如 gif 生成, 参考生成等 feature. 敬请期待.
+监督微调可以让 MOSS-Image-Base 支持 GIF 生成和参考图生成等功能。
 
-如果你要自己后训练 MOSS-Image-Base, 请保持 Text Encoder 冻结, 不要微调 Text Encoder.
+本仓库带有 LoRA、全量微调，以及参考图编辑训练。请保持 Text Encoder 冻结。用法见 README 的 Training 一节。
 
 ### 图片标注
 
@@ -151,7 +151,7 @@ Here is the original caption reference:
 
 #### Caption Model
 
-MOSS-Image-Base 尝试了多种 VLM 作为 caption model. 在这里我们推荐使用 Gemma 4, Qwen 3.5 27B 或 Qwen 3.5 35B-A3B. 一般的, 我们使用以下的 chat template 进行打标:
+MOSS-Image-Base 的推荐标注模型包括 Gemma 4、Qwen 3.5 27B 和 Qwen 3.5 35B-A3B。可以使用以下 chat template 进行标注：
 
 ```python
 body = {
@@ -183,5 +183,3 @@ body = {
 3. 理解促进生成.
 
 ### 少步蒸馏
-
-我们正在积极推进 DMD 等少步蒸馏方法. 敬请期待.
